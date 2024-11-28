@@ -1,0 +1,36 @@
+﻿{
+  "$schema": "http://json.schemastore.org/launchsettings.json",
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:36349",
+      "sslPort": 44308
+    }
+  },
+  "profiles": {
+    "http": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "launchUrl": "swagger",
+      "applicationUrl": "http://localhost:5001",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_HTTP_PORTS": "Development"
+      }
+    },
+    //"Kestrel": {
+    //  "EndPoints": {
+    //    "Http": {
+    //      "Url": "http://0.0.0.0:4242"
+    //    },
+    //    "Https": {
+    //      "Url": "https://0.0.0.0:5042"
+    //    },
+    //    "MyHttpEndpoint": {
+    //      "Url": "http://localhost:8080"
+    //    }
+    //  }
+  }
+}
