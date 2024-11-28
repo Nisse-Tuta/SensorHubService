@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35327.3
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SensorHubService", "SensorHubService.csproj", "{ADCE22DF-0613-45FB-9246-432E8A3A84AE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{ADCE22DF-0613-45FB-9246-432E8A3A84AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ADCE22DF-0613-45FB-9246-432E8A3A84AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ADCE22DF-0613-45FB-9246-432E8A3A84AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ADCE22DF-0613-45FB-9246-432E8A3A84AE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {75BD5D75-6147-41B1-9FB3-0FAE7D69EAC6}
+	EndGlobalSection
+EndGlobal
