@@ -97,6 +97,29 @@ namespace RaspSensorService
             return _port;
         }
 
+        private void ProcessGpsData(GpsDataDTO? gpsData, ListVaulesDTO result)
+        {
+            SensorVauleDTO kmSen = new SensorVauleDTO()
+            {
+                SensorId = "Speed",
+                Tiden = gpsData?.UTCTime ?? DateTime.Now,
+                Unit = "km/h",
+                Value = gpsData != null && gpsData.fixValid ? (gpsData.SpeedKph < 1 ? gpsData.SpeedKph * 100 : gpsData.SpeedKph) : 0
+            };
+            result.SensorValues.Add(kmSen);
+
+            SensorVauleDTO satUsed = new SensorVauleDTO()
+            {
+                SensorId = "SatelitesUsed",
+                Tiden = gpsData?.UTCTime ?? DateTime.Now,
+                Unit = "",
+                Value = gpsData != null && gpsData.fixValid ? gpsData.SatelitesUsed : 0
+            };
+            result.SensorValues.Add(satUsed);
+
+            gpsDataQueue.Enqueue(gpsData);
+        }
+
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             bool isDemo = true;
@@ -166,41 +189,7 @@ namespace RaspSensorService
                         garminResult = string.Empty;
                     }
                     antalGps++;
-                    if (gpsData != null && gpsData.fixValid)
-                    {
-                        okGps++;
-                        SensorVauleDTO kmSen = new SensorVauleDTO()
-                        {
-                            SensorId = "Speed",
-                            Tiden = gpsData.UTCTime,
-                            Unit = "km/h",
-                            Value = gpsData.SpeedKph < 1 ? gpsData.SpeedKph * 100 : gpsData.SpeedKph // Detta är bullshit men gps'en ligger i fönstret ;-) 
-                        };
-                        result.SensorValues.Add(kmSen);
-                        SensorVauleDTO satUsed = new SensorVauleDTO()
-                        {
-                            SensorId = "SatelitesUsed",
-                            Tiden = gpsData.UTCTime,
-                            Unit = "",
-                            Value = gpsData.SatelitesUsed 
-                        };
-                        result.SensorValues.Add(satUsed);
-                        
-                        gpsDataQueue.Enqueue(gpsData);
-                        //File.AppendAllText(jsonfile, JsonSerializer.Serialize(gpsData));
-                    }
-                    else
-                    {
-                        SensorVauleDTO satUsed = new SensorVauleDTO()
-                        {
-                            SensorId = "SatelitesUsed",
-                            Tiden = gpsData.UTCTime,
-                            Unit = "",
-                            Value = 0
-                        };
-                        result.SensorValues.Add(satUsed);
-                        failGps++;
-                    }
+                    ProcessGpsData(gpsData, result);
                 }
 
                 if (!string.IsNullOrEmpty(ardResult))
