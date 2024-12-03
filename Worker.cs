@@ -126,14 +126,14 @@ namespace RaspSensorService
             List<ISensor> sensorList = [];
 
 
-            // Serie port till Arduino 
             string arduinoPort = "";
             string garminPort = "";
-            string todayStr = DateTime.Now.ToString("yyyyMMdd");
+            string todayStr = DateTime.Now.ToString("yyyy-MM-dd_HH-mm");
             if (OperatingSystem.IsWindows())
             {
                 arduinoPort = "COM7";
-                garminPort = "COM4";
+                //garminPort = "COM4";
+                garminPort = "COM3";
                 jsonfile = $"D:\\tmp\\{todayStr}_Json.json";
                 gpsDatafile = $"D:\\tmp\\{todayStr}_GpsData.txt";
             }
@@ -145,8 +145,11 @@ namespace RaspSensorService
                 gpsDatafile = $"/home/chris/tmp/{todayStr}_GpsData.txt";
             }
 
-            _arduinoSerialPort = SetupPort(arduinoPort);
-            _arduinoSerialPort.DataReceived += ArduinoDataReceiveHandler; // Add DataReceived Event Handler
+            if (!OperatingSystem.IsWindows())
+            {  
+                _arduinoSerialPort = SetupPort(arduinoPort);
+                _arduinoSerialPort.DataReceived += ArduinoDataReceiveHandler; // Add DataReceived Event Handler
+            }
 
             _garminSerialPort = SetupPort(garminPort);
             _garminSerialPort.DataReceived += GarminDataReceiveHandler; // Add DataReceived Event Handler
@@ -180,16 +183,22 @@ namespace RaspSensorService
                 loops++;
                 result = new();
 
-                if (!string.IsNullOrEmpty(garminResult) && garminResult.StartsWith("$GN") && garminResult.IndexOf("*") > 0)
+                lock (_gpsLock)
                 {
-                    GpsDataDTO? gpsData = null;
-                    lock (_gpsLock)
+                    if (!string.IsNullOrEmpty(garminResult) && garminResult.StartsWith("$GN") && garminResult.IndexOf("*") > 0)
                     {
+                        GpsDataDTO? gpsData = null;
                         gpsData = GpsManager.ParseNmeaSentence(garminResult);
                         garminResult = string.Empty;
+                        antalGps++;
+                        ProcessGpsData(gpsData, result);
                     }
-                    antalGps++;
-                    ProcessGpsData(gpsData, result);
+                    else if (!garminResult.StartsWith("$GN")) // hamnat i osync med gpsen
+                    {
+                        failGps++;
+                        garminResult = string.Empty;
+                    }
+
                 }
 
                 if (!string.IsNullOrEmpty(ardResult))

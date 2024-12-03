@@ -8,6 +8,7 @@ namespace SensorHubService.Managers;
 public static class GpsManager
 {
     const double RADIUS = 6371;
+    private static readonly int MIN_SATS_ACCEPTED = 2;
 
 
     // Convert degrees in double to Radians
@@ -48,7 +49,7 @@ public static class GpsManager
                     case "GNGGA":
                         wrkObj.UTCTime = ParseNmeaTimetoUtcDateTime(splitted[1]);
                         wrkObj.SatelitesUsed = int.Parse(splitted[7]);
-                        wrkObj.fixValid = wrkObj.SatelitesUsed > 2 && !splitted[6].Equals("0");
+                        wrkObj.fixValid = wrkObj.SatelitesUsed >= MIN_SATS_ACCEPTED && !splitted[6].Equals("0");
                         if (!wrkObj.fixValid)
                         {
                             wrkObj.SpeedKph = -1;
