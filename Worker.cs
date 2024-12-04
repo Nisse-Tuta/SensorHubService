@@ -30,6 +30,8 @@ namespace RaspSensorService
         private string garminResult = "";
         private string jsonfile = "";
         private string gpsDatafile = "";
+        private string gpsSimfile = "";
+
         private OdometerManager odometerManager;
         private OdometerData odometerData;
         private Queue<GpsDataDTO> gpsDataQueue = new Queue<GpsDataDTO>();
@@ -132,8 +134,8 @@ namespace RaspSensorService
             if (OperatingSystem.IsWindows())
             {
                 arduinoPort = "COM7";
-                //garminPort = "COM4";
                 garminPort = "COM3";
+                //garminPort = "COM5";
                 jsonfile = $"D:\\tmp\\{todayStr}_Json.json";
                 gpsDatafile = $"D:\\tmp\\{todayStr}_GpsData.txt";
             }
@@ -145,14 +147,24 @@ namespace RaspSensorService
                 gpsDatafile = $"/home/chris/tmp/{todayStr}_GpsData.txt";
             }
 
+
             if (!OperatingSystem.IsWindows())
-            {  
+            {
                 _arduinoSerialPort = SetupPort(arduinoPort);
                 _arduinoSerialPort.DataReceived += ArduinoDataReceiveHandler; // Add DataReceived Event Handler
             }
 
-            _garminSerialPort = SetupPort(garminPort);
-            _garminSerialPort.DataReceived += GarminDataReceiveHandler; // Add DataReceived Event Handler
+            // gpsSimfile = $"D:\\GpsData\\2024-12-04_16-17_GpsData.txt";
+            List<string> gpsDataLst = new List<string>();
+            if (string.IsNullOrEmpty(gpsSimfile))
+            {
+                _garminSerialPort = SetupPort(garminPort);
+                _garminSerialPort.DataReceived += GarminDataReceiveHandler; // Add DataReceived Event Handler
+            }
+            else
+            {
+                gpsDataLst = File.ReadAllLines(gpsSimfile).ToList();
+            }
 
             // lägg till de sensorer vi har 
             sensorList.Add(SensorFactory.Sensor("HumiditySensor", false));
@@ -177,8 +189,17 @@ namespace RaspSensorService
             int antalGps = 0;
             int failGps = 0;
             int okGps = 0;
+            int gpsDataIndex = 0;
             while (!stoppingToken.IsCancellationRequested)
             {
+
+                if (gpsDataLst.Count > 0 && gpsDataIndex < gpsDataLst.Count)
+                {
+                    garminResult = gpsDataLst[gpsDataIndex];
+                    gpsDataIndex++;
+                    if (gpsDataIndex >= gpsDataLst.Count) { gpsDataIndex = 0; }
+                }
+
                 if (string.IsNullOrEmpty(garminResult) && string.IsNullOrEmpty(ardResult)) { continue; }
                 loops++;
                 result = new();
@@ -256,7 +277,7 @@ namespace RaspSensorService
                 {
                     long avgElapsed = elapsedTotal / loops;
                     _logger.LogInformation("Arduino string: {ardStr}", ardResult);
-                    //_logger.LogInformation("SignalR gpsData string: {result}", JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
+                    //_logger.LogInformation("SignalR gpsDataLst string: {result}", JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
                     _logger.LogInformation("GPS antal: {okstr} ok: {okint} fail: {failed} queLen: {qlen} ", antalGps, okGps, failGps, gpsDataQueue.Count);
                     _logger.LogInformation("Mätning och SignalR över {loops} varv snittade : {time}ms  senaste: {lastElapsed}ms", loops, avgElapsed, stopwatch.ElapsedMilliseconds);
                     loops = 0;

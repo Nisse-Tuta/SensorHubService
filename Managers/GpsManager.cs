@@ -33,10 +33,11 @@ public static class GpsManager
 
             while (rawDataSpan.Length > 0)
             {
+
                 int sentenceEnd = rawDataSpan.IndexOf("\r\n".AsSpan());
                 if (sentenceEnd == -1) sentenceEnd = rawDataSpan.Length;
                 sentenceSpan = rawDataSpan.Slice(0, sentenceEnd);
-                rawDataSpan = rawDataSpan.Slice(sentenceEnd + 2);
+                rawDataSpan = sentenceEnd == rawDataSpan.Length ? string.Empty : rawDataSpan.Slice(sentenceEnd + 2);
 
                 //if (!CheckNmeaChecksum(sentenceSpan.ToString())) continue;
 
@@ -50,16 +51,12 @@ public static class GpsManager
                         wrkObj.UTCTime = ParseNmeaTimetoUtcDateTime(splitted[1]);
                         wrkObj.SatelitesUsed = int.Parse(splitted[7]);
                         wrkObj.fixValid = wrkObj.SatelitesUsed >= MIN_SATS_ACCEPTED && !splitted[6].Equals("0");
-                        if (!wrkObj.fixValid)
-                        {
-                            wrkObj.SpeedKph = -1;
-                            return wrkObj;
-                        }
-                        else if (wrkObj.fixValid && wrkObj.Latitude != 0 && wrkObj.Longitude != 0)
-                        {
-                            //Console.Write("f");
-                            //Console.WriteLine($"Not valid  sats: {wrkObj.SatelitesUsed} spltstr: {splitted[6]} ");
-                        }
+                        //if (!wrkObj.fixValid)
+                        //{
+                        //    wrkObj.SpeedKph = -1;
+                        //    return wrkObj;
+                        //}
+
                         wrkObj.Latitude = 0.01 * (splitted[3] == "S" ? -1 : 1) * System.Convert.ToDouble(splitted[2], CultureInfo.InvariantCulture);
                         wrkObj.LatIndicator = splitted[3];
                         wrkObj.Longitude = 0.01 * (splitted[5] == "W" ? -1 : 1) * System.Convert.ToDouble(splitted[4], CultureInfo.InvariantCulture);
@@ -67,7 +64,14 @@ public static class GpsManager
                         break;
 
                     case "GNVTG":
-                        wrkObj.SpeedKph = System.Convert.ToDouble(splitted[7], CultureInfo.InvariantCulture);
+                        double tmpVtg = splitted[7].Length > 0 ? System.Convert.ToDouble(splitted[7], CultureInfo.InvariantCulture) : -1;
+                        if (tmpVtg > 0) { wrkObj.SpeedKph = tmpVtg;  }
+                        break;
+
+                    case "GNRMC":
+                        double tmpRmc = splitted[7].Length > 0 ? System.Convert.ToDouble(splitted[7], CultureInfo.InvariantCulture) : -1;
+                        // knots to kph
+                        if (tmpRmc > 0) { wrkObj.SpeedKph = tmpRmc = 1.852; }
                         break;
 
                     default:
@@ -81,14 +85,14 @@ public static class GpsManager
         return wrkObj;
     }
 
-    // function to check nmea checksum in the sentence
     public static bool CheckNmeaChecksum(string sentence)
     {
         if (sentence.IndexOf("*") < 0) return false;
         string[] splitted = sentence.Split("*");
         string checksum = splitted[1];
         byte checkSum = 0;
-        foreach (char c in splitted[0])
+        // Substring(1) för att skippa inledande $
+        foreach (char c in splitted[0].Substring(1))
         {
             checkSum ^= (byte)c;
         }
