@@ -21,110 +21,107 @@ public class OdometerData
     public double YearlyKm { get; set; }
     public double FuelCheckKm { get; set; }
     public double TemporaryKm { get; set; }
-
 }
 
 public class OdometerManager
 {
-    private readonly string _filePath;
-    private OdometerData? odometerData;
+  private readonly string _filePath;
+  private OdometerData odometerData = new OdometerData();
 
-    public OdometerManager()
+  public OdometerManager()
+  {
+    if (OperatingSystem.IsWindows())
     {
-        if (OperatingSystem.IsWindows())
-        {
-            _filePath = "D:\\tmp\\OdometerFile.txt";
-        }
-        else 
-        {
-            //_filePath = "~/tmp/OdometerFile.txt";
-            _filePath = $"/home/chris/tmp/OdometerFile.txt";
-        }
-
-        if (File.Exists(_filePath))
-        {
-            string[] lines = File.ReadAllLines(_filePath);
-            odometerData = JsonSerializer.Deserialize<OdometerData>(lines[lines.Length - 1]);
-        }
-        else
-        {
-            odometerData = new OdometerData();
-        }
+      _filePath = "D:\\tmp\\OdometerFile.json";
+    }
+    else
+    {
+      //_filePath = "~/tmp/OdometerFile.txt";
+      _filePath = $"/home/chris/tmp/OdometerFile.txt";
     }
 
-    public OdometerData AddOdometerDataAsync(double addkm)
+    if (File.Exists(_filePath))
     {
-        odometerData.TotalKm += addkm;
-        odometerData.YearlyKm += addkm;
-        odometerData.FuelCheckKm += addkm;
-        odometerData.TemporaryKm += addkm;
-        File.WriteAllTextAsync(_filePath, JsonSerializer.Serialize(odometerData));
-        return odometerData;
+      string[] lines = File.ReadAllLines(_filePath);
+      odometerData = JsonSerializer.Deserialize<OdometerData>(lines[lines.Length - 1])!;
     }
+  }
 
-    public OdometerData GetOdometerData()
+  public OdometerData? GetOdometerData()
+  {
+    return odometerData;
+  }
+
+  public OdometerData AddOdometerData(double addkm)
+  {
+    odometerData.Date = DateTime.Now;
+    odometerData.TotalKm += addkm;
+    odometerData.YearlyKm += addkm;
+    odometerData.FuelCheckKm += addkm;
+    odometerData.TemporaryKm += addkm;
+    File.WriteAllTextAsync(_filePath, JsonSerializer.Serialize(odometerData));
+
+    return odometerData;
+  }
+
+  public OdometerData ResetOdometerData(OdometerType odometerType)
+  {
+    switch (odometerType)
     {
-        return odometerData;
+      case OdometerType.Yearly:
+        odometerData.YearlyKm = 0;
+        break;
+      case OdometerType.FuelCheck:
+        odometerData.FuelCheckKm = 0;
+        break;
+      case OdometerType.Temporary:
+        odometerData.TemporaryKm = 0;
+        break;
+      default:
+        break;
     }
+    File.WriteAllTextAsync(_filePath, JsonSerializer.Serialize(odometerData));
+    return odometerData;
+  }
 
-    public OdometerData ResetOdometerData(OdometerType odometerType)
+  public void MakeSensorValuesOfOdometer(ListVaulesDTO result)
+  {
+    SensorVauleDTO gpsSen = new SensorVauleDTO()
     {
-        switch (odometerType)
-        {
-            case OdometerType.Yearly:
-                odometerData.YearlyKm = 0;
-                break;
-            case OdometerType.FuelCheck:
-                odometerData.FuelCheckKm = 0;
-                break;
-            case OdometerType.Temporary:
-                odometerData.TemporaryKm = 0;
-                break;
-            default:
-                break;
-        }
-        File.WriteAllTextAsync(_filePath, JsonSerializer.Serialize(odometerData));
-        return odometerData;
-    }
+      SensorId = "OdometerTotalKm",
+      Tiden = DateTime.Now,
+      Unit = "km",
+      Value = odometerData.TotalKm
+    };
+    result.SensorValues.Add(gpsSen);
 
-    public void MakeSensorValuesOfOdometer(ListVaulesDTO result)
+    gpsSen = new SensorVauleDTO()
     {
-        SensorVauleDTO gpsSen = new SensorVauleDTO()
-        {
-            SensorId = "OdometerTotalKm",
-            Tiden = DateTime.Now,
-            Unit = "km",
-            Value = odometerData.TotalKm
-        };
-        result.SensorValues.Add(gpsSen);
+      SensorId = "OdometerYearlyKm",
+      Tiden = DateTime.Now,
+      Unit = "km",
+      Value = odometerData.YearlyKm
+    };
+    result.SensorValues.Add(gpsSen);
 
-        gpsSen = new SensorVauleDTO()
-        {
-            SensorId = "OdometerYearlyKm",
-            Tiden = DateTime.Now,
-            Unit = "km",
-            Value = odometerData.YearlyKm
-        };
-        result.SensorValues.Add(gpsSen);
+    gpsSen = new SensorVauleDTO()
+    {
+      SensorId = "OdometerFuelCheckKm",
+      Tiden = DateTime.Now,
+      Unit = "km",
+      Value = odometerData.FuelCheckKm
+    };
+    result.SensorValues.Add(gpsSen);
 
-        gpsSen = new SensorVauleDTO()
-        {
-            SensorId = "OdometerFuelCheckKm",
-            Tiden = DateTime.Now,
-            Unit = "km",
-            Value = odometerData.FuelCheckKm
-        };
-        result.SensorValues.Add(gpsSen);
-
-        gpsSen = new SensorVauleDTO()
-        {
-            SensorId = "OdometerTemporaryKm",
-            Tiden = DateTime.Now,
-            Unit = "km",
-            Value = odometerData.TemporaryKm
-        };
-        result.SensorValues.Add(gpsSen);
-    }
+    gpsSen = new SensorVauleDTO()
+    {
+      SensorId = "OdometerTemporaryKm",
+      Tiden = DateTime.Now,
+      Unit = "km",
+      Value = odometerData.TemporaryKm
+    };
+    result.SensorValues.Add(gpsSen);
+  }
 
 }
 
